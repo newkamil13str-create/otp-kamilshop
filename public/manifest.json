@@ -1,0 +1,14 @@
+{
+  "name": "KAMIL OTP",
+  "short_name": "KAMIL OTP",
+  "description": "Beli nomor OTP virtual instan dari 200+ negara",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0F",
+  "theme_color": "#06B6D4",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
