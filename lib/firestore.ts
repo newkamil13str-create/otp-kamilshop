@@ -22,7 +22,12 @@ import type { User, Order, Topup } from '@/types'
 export async function getUser(uid: string): Promise<User | null> {
   const snap = await getDoc(doc(db, 'users', uid))
   if (!snap.exists()) return null
-  return snap.data() as User
+  const data = snap.data()
+  return {
+    ...data,
+    createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(),
+    lastLogin: data.lastLogin ? (data.lastLogin as Timestamp).toDate() : new Date(),
+  } as User
 }
 
 export async function createUser(uid: string, data: Partial<User>) {
