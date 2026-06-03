@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTopup } from '@/lib/firestore'
-import { verifyFirebaseToken } from '@/lib/utils'
+import { verifyFirebaseToken } from '@/lib/server-utils'
 
 export async function GET(req: NextRequest) {
   const token = req.headers.get('Authorization')?.replace('Bearer ', '')

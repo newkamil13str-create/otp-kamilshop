@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buyNumber, applyMarkup } from '@/lib/rumahotp'
 import { deductBalanceAndCreateOrder, getUser } from '@/lib/firestore'
-import { verifyFirebaseToken, rateLimit } from '@/lib/utils'
+import { verifyFirebaseToken } from '@/lib/server-utils'
+import { rateLimit } from '@/lib/utils'
 
 const rateLimitMap = new Map<string, number[]>()
 

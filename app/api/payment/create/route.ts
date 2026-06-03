@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createQrisTransaction } from '@/lib/pakasir'
 import { createTopup, getUser } from '@/lib/firestore'
-import { verifyFirebaseToken } from '@/lib/utils'
+import { verifyFirebaseToken } from '@/lib/server-utils'
 import { v4 as uuidv4 } from 'uuid'
 
 export async function POST(req: NextRequest) {

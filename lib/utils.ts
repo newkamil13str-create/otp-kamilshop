@@ -90,11 +90,6 @@ export function getRegion(iso: string): string {
   return regions[iso] ?? 'Lainnya'
 }
 
-export async function verifyFirebaseToken(token: string) {
-  const { adminAuth } = await import('./firebase-admin')
-  return adminAuth.verifyIdToken(token)
-}
-
 export function rateLimit(map: Map<string, number[]>, key: string, maxReq: number, windowMs: number): boolean {
   const now = Date.now()
   const timestamps = (map.get(key) ?? []).filter((t) => now - t < windowMs)

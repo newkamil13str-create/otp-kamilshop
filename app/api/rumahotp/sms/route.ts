@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkOrder } from '@/lib/rumahotp'
 import { getOrder, updateOrder } from '@/lib/firestore'
-import { verifyFirebaseToken } from '@/lib/utils'
+import { verifyFirebaseToken } from '@/lib/server-utils'
 
 // Map status code RumahOTP ke status internal
 function mapStatus(statusCode: number | string): string {

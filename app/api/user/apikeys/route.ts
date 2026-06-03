@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyFirebaseToken } from '@/lib/utils'
+import { verifyFirebaseToken } from '@/lib/server-utils'
 import { createApiKey, getUserApiKeys, revokeApiKey } from '@/lib/apikey'
 
 async function getUid(req: NextRequest): Promise<string | null> {

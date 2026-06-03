@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { setOrderStatus } from '@/lib/rumahotp'
 import { getOrder, updateOrder, updateUserBalance, getUser } from '@/lib/firestore'
-import { verifyFirebaseToken } from '@/lib/utils'
+import { verifyFirebaseToken } from '@/lib/server-utils'
 
 export async function POST(req: NextRequest) {
   const token = req.headers.get('Authorization')?.replace('Bearer ', '')
