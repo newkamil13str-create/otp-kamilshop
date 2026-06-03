@@ -1,9 +1,6 @@
 import { NextRequest } from 'next/server'
-import { validateApiKey } from './apikey'
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from './firebase'
+import { adminDb } from './firebase-admin'
 
-// Ambil uid dari API key di header "x-api-key" atau query ?api_key=
 export async function authByApiKey(req: NextRequest): Promise<{ uid: string } | null> {
   const key =
     req.headers.get('x-api-key') ??
@@ -12,11 +9,13 @@ export async function authByApiKey(req: NextRequest): Promise<{ uid: string } | 
 
   if (!key) return null
 
-  const result = await validateApiKey(key)
-  if (!result) return null
+  const snap = await adminDb.collection('apikeys').doc(key).get()
+  if (!snap.exists) return null
+  const data = snap.data()!
+  if (!data.active) return null
 
   // Update lastUsedAt (fire and forget)
-  updateDoc(doc(db, 'apikeys', key), { lastUsedAt: serverTimestamp() }).catch(() => {})
+  adminDb.collection('apikeys').doc(key).update({ lastUsedAt: new Date() }).catch(() => {})
 
-  return { uid: result.uid }
+  return { uid: data.uid }
 }

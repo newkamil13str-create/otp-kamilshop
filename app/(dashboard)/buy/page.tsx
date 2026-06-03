@@ -99,10 +99,10 @@ function BuyContent() {
   }
 
   const filteredServices = services.filter((s) =>
-    s.displayName.toLowerCase().includes(serviceSearch.toLowerCase())
+    (s.displayName ?? s.name ?? '').toLowerCase().includes(serviceSearch.toLowerCase())
   )
   const filteredCountries = countries.filter((c) =>
-    c.name.toLowerCase().includes(countrySearch.toLowerCase())
+    (c.name ?? '').toLowerCase().includes(countrySearch.toLowerCase())
   )
 
   const STEPS = ['Pilih Aplikasi', 'Pilih Negara', 'Konfirmasi']

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/components/auth/AuthProvider'
-import { getUserTopups } from '@/lib/firestore'
 import { formatIDR } from '@/lib/utils'
 import QRISModal from '@/components/topup/QRISModal'
 import TopupHistory from '@/components/topup/TopupHistory'
@@ -23,9 +22,15 @@ export default function TopupPage() {
   const [loadingHistory, setLoadingHistory] = useState(true)
 
   useEffect(() => {
-    if (!user) return
-    getUserTopups(user.uid, 10).then(setHistory).finally(() => setLoadingHistory(false))
-  }, [user])
+    if (!user || !firebaseUser) return
+    firebaseUser.getIdToken().then((token) => {
+      fetch('/api/user/topups', { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.json())
+        .then((data) => setHistory(Array.isArray(data) ? data : []))
+        .catch(() => {})
+        .finally(() => setLoadingHistory(false))
+    })
+  }, [user, firebaseUser])
 
   const finalAmount = isCustom ? parseInt(customAmount || '0') : amount
 
@@ -53,7 +58,9 @@ export default function TopupPage() {
   const handlePaymentSuccess = async () => {
     setModal(null)
     await refreshUser()
-    const tops = await getUserTopups(user!.uid, 10)
+    const token = await firebaseUser!.getIdToken()
+    const tops = await fetch('/api/user/topups', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json()).then((d) => Array.isArray(d) ? d : []).catch(() => [])
     setHistory(tops)
   }
 
