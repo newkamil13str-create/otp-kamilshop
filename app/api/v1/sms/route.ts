@@ -3,7 +3,9 @@ import { authByApiKey } from '@/lib/api-auth'
 import { checkOrder } from '@/lib/rumahotp'
 import { getOrder, updateOrder } from '@/lib/firestore'
 
-function mapStatus(code: number | string): string {
+import type { OrderStatus } from '@/types'
+
+function mapStatus(code: number | string): OrderStatus {
   switch (Number(code)) {
     case 1: return 'PENDING'
     case 2: return 'RECEIVED'

@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkOrder } from '@/lib/rumahotp'
 import { getOrder, updateOrder } from '@/lib/firestore'
 import { verifyFirebaseToken } from '@/lib/server-utils'
+import type { OrderStatus } from '@/types'
 
 // Map status code RumahOTP ke status internal
-function mapStatus(statusCode: number | string): string {
+function mapStatus(statusCode: number | string): OrderStatus {
   const code = Number(statusCode)
   // RumahOTP: 1=waiting, 2=received(sms masuk), 3=expired, 6=canceled, 8=finished, 9=banned
   switch (code) {
