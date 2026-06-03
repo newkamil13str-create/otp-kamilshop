@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/AuthProvider'
-import { getUserOrders } from '@/lib/firestore'
 import { formatIDR, formatDate, getStatusColor, getStatusLabel, getServiceIcon } from '@/lib/utils'
 import type { Order, OrderStatus } from '@/types'
 
@@ -17,15 +16,21 @@ const STATUS_FILTERS: { label: string; value: OrderStatus | 'ALL' }[] = [
 ]
 
 export default function OrdersPage() {
-  const { user } = useAuth()
+  const { firebaseUser } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<OrderStatus | 'ALL'>('ALL')
 
   useEffect(() => {
-    if (!user) return
-    getUserOrders(user.uid, 50).then(setOrders).finally(() => setLoading(false))
-  }, [user])
+    if (!firebaseUser) return
+    firebaseUser.getIdToken().then((token) => {
+      fetch('/api/user/orders?limit=50', { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.json())
+        .then((data) => setOrders(Array.isArray(data) ? data : []))
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    })
+  }, [firebaseUser])
 
   const filtered = filter === 'ALL' ? orders : orders.filter((o) => o.status === filter)
 
@@ -36,7 +41,6 @@ export default function OrdersPage() {
         <p className="text-gray-500 text-sm">Semua transaksi pembelian nomor OTP kamu</p>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-2 flex-wrap">
         {STATUS_FILTERS.map((f) => (
           <button
@@ -53,7 +57,6 @@ export default function OrdersPage() {
         ))}
       </div>
 
-      {/* Table */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="glass overflow-hidden">
         {loading ? (
           <div className="p-6 space-y-3">

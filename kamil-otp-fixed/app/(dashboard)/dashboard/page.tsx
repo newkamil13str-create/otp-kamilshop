@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/components/auth/AuthProvider'
-import { getUserOrders } from '@/lib/firestore'
 import BalanceCard from '@/components/dashboard/BalanceCard'
 import RecentOrders from '@/components/dashboard/RecentOrders'
 import type { Order } from '@/types'
@@ -19,25 +18,29 @@ const QUICK_SERVICES = [
 ]
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, firebaseUser } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [loadingOrders, setLoadingOrders] = useState(true)
 
   useEffect(() => {
-    if (!user) return
-    getUserOrders(user.uid, 5).then(setOrders).finally(() => setLoadingOrders(false))
-  }, [user])
+    if (!firebaseUser) return
+    firebaseUser.getIdToken().then((token) => {
+      fetch('/api/user/orders?limit=5', { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.json())
+        .then((data) => setOrders(Array.isArray(data) ? data : []))
+        .catch(() => {})
+        .finally(() => setLoadingOrders(false))
+    })
+  }, [firebaseUser])
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      {/* Balance Card */}
       <BalanceCard
         balance={user?.balance ?? 0}
         totalTopup={user?.totalTopup ?? 0}
         totalSpent={user?.totalSpent ?? 0}
       />
 
-      {/* Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass p-5">
           <p className="text-gray-500 text-sm mb-1">Total Order</p>
@@ -60,7 +63,6 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* Quick Buy */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="glass p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-white">⚡ Beli Cepat</h2>
@@ -80,7 +82,6 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
-      {/* Recent Orders */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-white">📋 Order Terbaru</h2>

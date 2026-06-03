@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/components/auth/AuthProvider'
-import { getOrder } from '@/lib/firestore'
 import { formatIDR, formatDate, getStatusColor, getStatusLabel, highlightOTP, extractOTP } from '@/lib/utils'
 import type { Order } from '@/types'
 
@@ -25,33 +24,33 @@ export default function OrderDetailPage() {
     if (!firebaseUser || !orderId) return
     try {
       const token = await firebaseUser.getIdToken()
+      // Coba poll SMS dulu (update status sekalian)
       const res = await fetch(`/api/rumahotp/sms?orderId=${orderId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (res.ok) {
         const data = await res.json()
         setOrder(data.order)
+        return
       }
-    } catch {
-      // fallback to firestore
-      const o = await getOrder(orderId)
-      if (o) setOrder(o)
-    }
+      // Fallback: ambil dari API user/orders
+      const res2 = await fetch(`/api/user/orders/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res2.ok) setOrder(await res2.json())
+    } catch {}
   }, [firebaseUser, orderId])
 
-  // Initial load
   useEffect(() => {
-    getOrder(orderId).then((o) => { setOrder(o); setLoading(false) })
-  }, [orderId])
+    fetchOrder().finally(() => setLoading(false))
+  }, [fetchOrder])
 
-  // Auto-refresh every 5s if active
   useEffect(() => {
     if (!order || !ACTIVE_STATUSES.includes(order.status)) return
     const interval = setInterval(fetchOrder, 5000)
     return () => clearInterval(interval)
   }, [order?.status, fetchOrder])
 
-  // Countdown timer (20 min from creation)
   useEffect(() => {
     if (!order) return
     const tick = () => {
@@ -125,7 +124,6 @@ export default function OrderDetailPage() {
         ← Kembali ke Riwayat
       </button>
 
-      {/* Phone number card */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="glass p-6 text-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-violet-500/5" />
         <div className="relative">
@@ -137,7 +135,7 @@ export default function OrderDetailPage() {
             <button onClick={copyPhone} className={`btn-primary px-6 py-2.5 text-sm ${copied ? 'from-green-500 to-green-600' : ''}`}>
               {copied ? '✓ Disalin!' : '📋 Salin Nomor'}
             </button>
-            <span className={`status-badge ${getStatusColor(order.status)} ${isActive ? 'animate-pulse-glow' : ''}`}>
+            <span className={`status-badge ${getStatusColor(order.status)}`}>
               {isActive && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />}
               {getStatusLabel(order.status)}
             </span>
@@ -145,7 +143,6 @@ export default function OrderDetailPage() {
         </div>
       </motion.div>
 
-      {/* Info row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'Layanan', value: order.service, cls: 'capitalize' },
@@ -160,7 +157,6 @@ export default function OrderDetailPage() {
         ))}
       </div>
 
-      {/* OTP highlight */}
       {otp && (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass p-5 border border-cyan-500/30 bg-cyan-500/5">
           <p className="text-sm text-gray-400 mb-2">🔑 Kode OTP Terdeteksi</p>
@@ -173,7 +169,6 @@ export default function OrderDetailPage() {
         </motion.div>
       )}
 
-      {/* SMS Box */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="glass p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">📨 Kotak SMS</h2>
@@ -184,7 +179,6 @@ export default function OrderDetailPage() {
             </div>
           )}
         </div>
-
         {(!order.sms || order.sms.length === 0) ? (
           <div className="text-center py-8">
             <p className="text-4xl mb-3">📭</p>
@@ -200,17 +194,13 @@ export default function OrderDetailPage() {
                   <span className="text-xs text-gray-600">Dari: {sms.sender}</span>
                   <span className="text-xs text-gray-600">{sms.created_at}</span>
                 </div>
-                <p
-                  className="text-sm text-white leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: highlightOTP(sms.text) }}
-                />
+                <p className="text-sm text-white leading-relaxed" dangerouslySetInnerHTML={{ __html: highlightOTP(sms.text) }} />
               </div>
             ))}
           </div>
         )}
       </motion.div>
 
-      {/* Actions */}
       {isActive && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="glass p-5">
           <h2 className="font-semibold mb-4">⚙️ Aksi Order</h2>

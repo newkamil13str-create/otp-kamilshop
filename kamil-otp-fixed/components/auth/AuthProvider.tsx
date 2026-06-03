@@ -7,7 +7,6 @@ import {
   User as FirebaseUser,
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
-import { createUser, getUser, updateLastLogin } from '@/lib/firestore'
 import type { User } from '@/types'
 
 interface AuthContextType {
@@ -26,7 +25,25 @@ const AuthContext = createContext<AuthContextType>({
   refreshUser: async () => {},
 })
 
-// Set/hapus session cookie dari ID token Firebase
+async function fetchOrCreateUser(fbUser: FirebaseUser): Promise<User | null> {
+  try {
+    const token = await fbUser.getIdToken()
+    const res = await fetch('/api/user/me', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: fbUser.email ?? '',
+        displayName: fbUser.displayName ?? fbUser.email?.split('@')[0] ?? 'User',
+        photoURL: fbUser.photoURL ?? '',
+      }),
+    })
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
+    return null
+  }
+}
+
 async function syncSessionCookie(fbUser: FirebaseUser | null) {
   if (fbUser) {
     const token = await fbUser.getIdToken()
@@ -43,27 +60,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     if (!firebaseUser) return
-    const u = await getUser(firebaseUser.uid)
-    setUser(u)
+    try {
+      const token = await firebaseUser.getIdToken()
+      const res = await fetch('/api/user/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data)
+      }
+    } catch {}
   }
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser)
       await syncSessionCookie(fbUser)
-
       if (fbUser) {
-        let u = await getUser(fbUser.uid)
-        if (!u) {
-          await createUser(fbUser.uid, {
-            email: fbUser.email ?? '',
-            displayName: fbUser.displayName ?? fbUser.email?.split('@')[0] ?? 'User',
-            photoURL: fbUser.photoURL ?? '',
-          })
-          u = await getUser(fbUser.uid)
-        } else {
-          await updateLastLogin(fbUser.uid)
-        }
+        const u = await fetchOrCreateUser(fbUser)
         setUser(u)
       } else {
         setUser(null)
