@@ -15,9 +15,8 @@ import type { ApiKey } from '@/types'
 
 // Generate random API key: "kotp_" + 32 hex chars
 export function generateApiKey(): string {
-  const array = new Uint8Array(16)
-  crypto.getRandomValues(array)
-  const hex = Array.from(array).map((b) => b.toString(16).padStart(2, '0')).join('')
+  const { randomBytes } = require('crypto')
+  const hex = randomBytes(16).toString('hex')
   return `kotp_${hex}`
 }
 
